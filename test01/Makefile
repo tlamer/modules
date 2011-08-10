@@ -1,6 +1,7 @@
 obj-m := test1.o
 obj-m += test2.o
 obj-m += test3.o
+obj-m += chardev.o
 
 #EXTRA_CFLAGS := -I$(PWD)/../include -I/usr/include -I/usr/realtime/include
 
