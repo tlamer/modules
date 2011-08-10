@@ -3,7 +3,7 @@ obj-m += test2.o
 obj-m += test3.o
 obj-m += chardev.o
 
-#EXTRA_CFLAGS := -I$(PWD)/../include -I/usr/include -I/usr/realtime/include
+EXTRA_CFLAGS := -I$(PWD) -I/usr/include -I/usr/realtime/include
 
 all:
 	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
