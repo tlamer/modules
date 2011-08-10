@@ -58,7 +58,7 @@ procfile_read(char *buffer,
 {
 	int ret;
 	
-	printk(KERN_INFO "procfile_read (/proc/%s) called\n", procfs_name);
+	printk(KERN_INFO "[procfs1] procfile_read (/proc/%s) called\n", procfs_name);
 	
 	/* 
 	 * We give all of our information in one go, so if the
@@ -87,25 +87,25 @@ int init_module()
 	Our_Proc_File = create_proc_entry(procfs_name, 0644, NULL);
 	
 	if (Our_Proc_File == NULL) {
-		remove_proc_entry(procfs_name, &proc_root);
-		printk(KERN_ALERT "Error: Could not initialize /proc/%s\n",
+		remove_proc_entry(procfs_name, NULL);
+		printk(KERN_ALERT "[procfs1] Error: Could not initialize /proc/%s\n",
 		       procfs_name);
 		return -ENOMEM;
 	}
 
 	Our_Proc_File->read_proc = procfile_read;
-	Our_Proc_File->owner 	 = THIS_MODULE;
+//	Our_Proc_File->owner 	 = THIS_MODULE;
 	Our_Proc_File->mode 	 = S_IFREG | S_IRUGO;
 	Our_Proc_File->uid 	 = 0;
 	Our_Proc_File->gid 	 = 0;
 	Our_Proc_File->size 	 = 37;
 
-	printk(KERN_INFO "/proc/%s created\n", procfs_name);	
+	printk(KERN_INFO "[procfs1] /proc/%s created\n", procfs_name);	
 	return 0;	/* everything is ok */
 }
 
 void cleanup_module()
 {
-	remove_proc_entry(procfs_name, &proc_root);
-	printk(KERN_INFO "/proc/%s removed\n", procfs_name);
+	remove_proc_entry(procfs_name, NULL);
+	printk(KERN_INFO "[procfs1] /proc/%s removed\n", procfs_name);
 }
