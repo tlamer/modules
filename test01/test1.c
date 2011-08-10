@@ -14,6 +14,7 @@ int init_module(void)
 	printk(KERN_ALERT "[test1] alert msg\n");
 	printk(KERN_EMERG "[test1] emergency msg\n");
 	return 0;
+	//return -1;
 }
 
 void cleanup_module(void)
