@@ -5,15 +5,29 @@
 
 #include <linux/module.h>	/* Specifically, a module */
 #include <linux/kernel.h>	/* We're doing kernel work */
-#include <linux/proc_fs.h>	/* Necessary because we use the proc fs */
+#include <linux/proc_fs.h>	/* Necessary bcause we use the proc fs */
+#include <asm/uaccess.h>
+#include <procfs1.h>
 
-#define procfs_name "helloworld"
+#define PROCFS_NAME "helloworld"
+#define	BUF_LEN 80
+
+MODULE_LICENSE("GPL");
 
 /**
  * This structure hold information about the /proc file
  *
  */
-struct proc_dir_entry *Our_Proc_File;
+static struct proc_dir_entry *Our_Proc_File;
+static struct file_operations proc_fops = {
+	.read = procfile_read,
+	.open = procfile_open,
+	.release = procfile_release
+};
+
+static char msg[BUF_LEN];
+static char *msg_ptr;
+static int Device_Open = 0;
 
 /* Put data into the proc fs file.
  * 
@@ -51,61 +65,99 @@ struct proc_dir_entry *Our_Proc_File;
  * advantage of having the kernel source code for
  * free - use it.
  */
-int
-procfile_read(char *buffer,
-	      char **buffer_location,
-	      off_t offset, int buffer_length, int *eof, void *data)
-{
-	int ret;
-	
-	printk(KERN_INFO "[procfs1] procfile_read (/proc/%s) called\n", procfs_name);
-	
-	/* 
-	 * We give all of our information in one go, so if the
-	 * user asks us if we have more information the
-	 * answer should always be no.
-	 *
-	 * This is important because the standard read
-	 * function from the library would continue to issue
-	 * the read system call until the kernel replies
-	 * that it has no more information, or until its
-	 * buffer is filled.
-	 */
-	if (offset > 0) {
-		/* we have finished to read, return 0 */
-		ret  = 0;
-	} else {
-		/* fill the buffer, return the buffer size */
-		ret = sprintf(buffer, "HelloWorld!\n");
-	}
+//static int
+//procfile_read(char *buffer,
+//	      char **buffer_location,
+//	      off_t offset, int buffer_length, int *eof, void *data)
+//{
+//	int ret;
+//	
+//	printk(KERN_INFO "[procfs1] procfile_read (/proc/%s) called\n", PROCFS_NAME);
+//	
+//	/* 
+//	 * We give all of our information in one go, so if the
+//	 * user asks us if we have more information the
+//	 * answer should always be no.
+//	 *
+//	 * This is important because the standard read
+//	 * function from the library would continue to issue
+//	 * the read system call until the kernel replies
+//	 * that it has no more information, or until its
+//	 * buffer is filled.
+//	 */
+//	if (offset > 0) {
+//		/* we have finished to read, return 0 */
+//		ret  = 0;
+//	} else {
+//		/* fill the buffer, return the buffer size */
+//		ret = sprintf(buffer, "HelloWorld!\n");
+//	}
+//
+//	return ret;
+//}
 
-	return ret;
+static int procfile_open(struct inode *inode, struct file *file){
+	
+	if (Device_Open)
+		return -EBUSY;
+
+	Device_Open++;
+	sprintf(msg, "Hello World!\n");
+	msg_ptr = msg;
+	try_module_get(THIS_MODULE);
+
+	return 0;
+}
+
+static int procfile_release(struct inode *inode, struct file *file)
+{
+	Device_Open--;
+	module_put(THIS_MODULE);
+	return 0;
+}
+
+static ssize_t procfile_read(struct file *filp,
+		char *buffer,
+		size_t length,
+		loff_t *offset)
+{
+	int bytes_read = 0;
+	if (*msg_ptr == 0)
+		return 0;
+
+	while (length && *msg_ptr){
+		put_user(*(msg_ptr++),buffer++);
+
+		length--;
+		bytes_read++;
+	}
+	return bytes_read;
 }
 
 int init_module()
 {
-	Our_Proc_File = create_proc_entry(procfs_name, 0644, NULL);
+	Our_Proc_File = proc_create(PROCFS_NAME, S_IFREG | S_IRUGO, NULL, &proc_fops);
 	
 	if (Our_Proc_File == NULL) {
-		remove_proc_entry(procfs_name, NULL);
+		remove_proc_entry(PROCFS_NAME, NULL);
 		printk(KERN_ALERT "[procfs1] Error: Could not initialize /proc/%s\n",
-		       procfs_name);
+		       PROCFS_NAME);
 		return -ENOMEM;
 	}
 
-	Our_Proc_File->read_proc = procfile_read;
-//	Our_Proc_File->owner 	 = THIS_MODULE;
-	Our_Proc_File->mode 	 = S_IFREG | S_IRUGO;
 	Our_Proc_File->uid 	 = 0;
 	Our_Proc_File->gid 	 = 0;
 	Our_Proc_File->size 	 = 37;
 
-	printk(KERN_INFO "[procfs1] /proc/%s created\n", procfs_name);	
+	sprintf(msg, "Hello World!\n");
+	msg_ptr = msg;
+
+	printk(KERN_INFO "[procfs1] /proc/%s created\n", PROCFS_NAME);	
 	return 0;	/* everything is ok */
 }
 
 void cleanup_module()
 {
-	remove_proc_entry(procfs_name, NULL);
-	printk(KERN_INFO "[procfs1] /proc/%s removed\n", procfs_name);
+	remove_proc_entry(PROCFS_NAME, NULL);
+	printk(KERN_INFO "[procfs1] /proc/%s removed\n", PROCFS_NAME);
 }
