@@ -127,10 +127,11 @@ procfile_write(struct file *filp, const char *buff, size_t len, loff_t * off)
 		return -EFAULT;
 	}
 
-	printk(KERN_INFO "%s",procfs_buffer);
+	printk(KERN_INFO "[procfs2] %s",procfs_buffer);
 	
 	return procfs_buffer_size;
 }
+
 
 /**
  *This function is called when the module is loaded
