@@ -1,4 +1,5 @@
 # 
+# Pcan communication driver
 # Copyright (C) 2011  Peter Kotvan <peter.kotvan@gmail.com>
 # 
 # This program is free software: you can redistribute it and/or modify
@@ -14,19 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # 
-#
-obj-m := test1.o
-obj-m += test2.o
-obj-m += test3.o
-obj-m += chardev.o
-obj-m += procfs1.o
-obj-m += procfsd2.o
-obj-m += procfs2.o
-obj-m += procfs3.o
-
-EXTRA_CFLAGS := -I$(PWD)/test01 -I/usr/include -I/usr/realtime/include
 
 all:
-	make -C /lib/modules/$(shell uname -r)/build M=$(PWD)/test01 modules
+	make -C test01 all
+	make -C rtdm_pcan all
 clean:
-	make -C /lib/modules/$(shell uname -r)/build M=$(PWD)/test01 clean
+	make -C test01 clean
+	make -C rtdm_pcan clean
