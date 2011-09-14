@@ -1,1 +1,0 @@
-void pridavok(void);
