@@ -16,9 +16,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # 
 
+define make-all
+@cd test01; make; cd ../rtdm_pcan; make; cd ..
+endef
+
+define make-clean
+@cd test01; make clean; cd ../rtdm_pcan; make clean; cd ..
+endef
+
 all:
-	make -C test01 all
-	make -C rtdm_pcan all
+	$(make-all)
+
 clean:
-	make -C test01 clean
-	make -C rtdm_pcan clean
+	$(make-clean)

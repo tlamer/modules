@@ -24,9 +24,9 @@ obj-m += procfsd2.o
 obj-m += procfs2.o
 obj-m += procfs3.o
 
-EXTRA_CFLAGS := -I$(PWD)/test01 -I/usr/include -I/usr/realtime/include
+EXTRA_CFLAGS := -I$(PWD) -I/usr/include -I/usr/realtime/include
 
 all:
-	make -C /lib/modules/$(shell uname -r)/build M=$(PWD)/test01 modules
+	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
 clean:
-	make -C /lib/modules/$(shell uname -r)/build M=$(PWD)/test01 clean
+	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
