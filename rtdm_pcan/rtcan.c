@@ -16,36 +16,112 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/init.h>
+#include <linux/slab.h>
 #include <linux/stat.h>
 #include <rtdm/rtdm.h>
+#include <rtcan.h>
 
-int pcan_fd0;
-int pcan_fd1;
+#define DEVICE_PATH "/dev/pcan"   // + Minor = real device path
+#define LOCAL_STRING_LEN 64
+
+typedef struct
+{
+	char szVersionString[LOCAL_STRING_LEN];
+	char szDevicePath[LOCAL_STRING_LEN];
+	int nFileNo;
+}PCAN_DESCRIPTOR;
+
+//----------------------------------------------------------------------------
+// merge a device file path
+static char *szDeviceName(int nMinor)
+{
+  static char path[LOCAL_STRING_LEN];
+  
+  path[0] = 0;
+  
+  if (nMinor > 64)
+    return path;
+    
+  sprintf(path, "%s%d", DEVICE_PATH, nMinor);
+  
+  return path;
+} 
+
+//----------------------------------------------------------------------------
+// do a unix like open of the device
+HANDLE LINUX_CAN_Open(const char *szDeviceName, int nFlag)
+{
+	PCAN_DESCRIPTOR *desc = NULL;
+	char DeviceName[15];
+
+	//  if ((desc = (PCAN_DESCRIPTOR *)malloc(sizeof(*desc))) == NULL)
+	desc = (PCAN_DESCRIPTOR *) kmalloc(sizeof(*desc), GFP_KERNEL);
+	if (!desc)
+		goto fail;
+
+	desc->szVersionString[0] = 0;
+	desc->szDevicePath[0]    = 0;
+
+
+	if ((desc->nFileNo = rt_dev_open(DeviceName, nFlag)) == -1)
+		goto fail;
+
+	strncpy(desc->szDevicePath, DeviceName, LOCAL_STRING_LEN);
+
+	return (HANDLE)desc;
+
+fail:
+	if (desc)
+	{
+		if (desc->nFileNo > -1)
+			rt_dev_close(desc->nFileNo);
+		kfree(desc);
+	}
+
+	return NULL;
+}
+
+//----------------------------------------------------------------------------
+// do a close of the device
+DWORD CAN_Close(HANDLE hHandle)
+{
+  PCAN_DESCRIPTOR *desc = (PCAN_DESCRIPTOR *)hHandle;
+  
+  if (desc)
+  {
+    if (desc->nFileNo > -1)
+    {
+      rt_dev_close(desc->nFileNo);
+      desc->nFileNo = -1;
+    }
+    kfree(desc);
+  }
+  return 0;;
+}
+
+HANDLE fd0;
+
 static int __init rtcan_init(void)
 {
-	const char device0[] = "pcan0"; 
-	const char device1[] = "pcan1"; 
-	pcan_fd0 = rt_dev_open(device0, 0);
-	pcan_fd1 = rt_dev_open(device1, 0);
-	printk(KERN_INFO "[rtcan] pcan0 file descriptor: %i\n",pcan_fd0);
-	printk(KERN_INFO "[rtcan] pcan1 file descriptor: %i\n",pcan_fd1);
-	printk(KERN_INFO "[rtcan] succesfully loaded\n");
+	fd0 = LINUX_CAN_Open(szDeviceName(0), O_RDWR);
+
+	if(fd0)
+	{
+		printk(KERN_INFO "[rtcan] pcan0 was succesfully opened\n");
+		printk(KERN_INFO "[rtcan] succesfully loaded\n");
+	}
+	else
+		printk(KERN_INFO "[rtcan] error\n");
 
 	return 0;
 }
 
 static void __exit rtcan_exit(void)
 {
-	int retval0;
-	int retval1;
-	retval0 = rt_dev_close(pcan_fd0);	
-	retval1 = rt_dev_close(pcan_fd1);	
-	printk(KERN_INFO "[rtcan] pcan0 closed with exit code: %i\n",retval0);
-	printk(KERN_INFO "[rtcan] pcan0 closed with exit code: %i\n",retval1);
+	CAN_Close(fd0);
 	printk(KERN_INFO "[rtcan] succesfully unloaded\n");
 }
 
