@@ -65,7 +65,8 @@ HANDLE LINUX_CAN_Open(const char *szDeviceName, int nFlag)
 	desc->szVersionString[0] = 0;
 	desc->szDevicePath[0]    = 0;
 
-
+  	sscanf(szDeviceName, "/dev/%s", DeviceName);
+	printk(KERN_INFO "%s",DeviceName);
 	if ((desc->nFileNo = rt_dev_open(DeviceName, nFlag)) == -1)
 		goto fail;
 
@@ -88,29 +89,54 @@ fail:
 // do a close of the device
 DWORD CAN_Close(HANDLE hHandle)
 {
+	PCAN_DESCRIPTOR *desc = (PCAN_DESCRIPTOR *)hHandle;
+
+	if (desc)
+	{
+		{
+			rt_dev_close(desc->nFileNo);
+			desc->nFileNo = -1;
+		}
+		kfree(desc);
+	}
+	return 0;;
+}
+
+//----------------------------------------------------------------------------
+// init the CAN chip of this device
+DWORD CAN_Init(HANDLE hHandle, WORD wBTR0BTR1, int nCANMsgType)
+{
   PCAN_DESCRIPTOR *desc = (PCAN_DESCRIPTOR *)hHandle;
+  int err = EBADF;
   
   if (desc)
   {
-    if (desc->nFileNo > -1)
-    {
-      rt_dev_close(desc->nFileNo);
-      desc->nFileNo = -1;
-    }
-    kfree(desc);
+    TPCANInit init;
+    
+    init.wBTR0BTR1    = wBTR0BTR1;    // combined BTR0 and BTR1 register of the SJA100
+    init.ucCANMsgType = (nCANMsgType) ? MSGTYPE_EXTENDED : MSGTYPE_STANDARD;  // 11 or 29 bits
+    init.ucListenOnly = 0;            // listen only mode when != 0
+    
+    if ((err = rt_dev_ioctl(desc->nFileNo, PCAN_INIT, &init)) < 0)
+      return err;
   }
-  return 0;;
+  
+  return err;
 }
-
+        
 HANDLE fd0;
 
 static int __init rtcan_init(void)
 {
+	int err;
+
 	fd0 = LINUX_CAN_Open(szDeviceName(0), O_RDWR);
+//	err = CAN_Init(fd0,CAN_BAUD_1M,CAN_INIT_TYPE_ST);
 
 	if(fd0)
 	{
 		printk(KERN_INFO "[rtcan] pcan0 was succesfully opened\n");
+//		printk(KERN_INFO "[rtcan] pcan0 was initialised with status: %i\n",err);
 		printk(KERN_INFO "[rtcan] succesfully loaded\n");
 	}
 	else
