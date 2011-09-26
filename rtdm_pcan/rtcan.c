@@ -57,7 +57,6 @@ HANDLE LINUX_CAN_Open(const char *szDeviceName, int nFlag)
 	PCAN_DESCRIPTOR *desc = NULL;
 	char DeviceName[15];
 
-	//  if ((desc = (PCAN_DESCRIPTOR *)malloc(sizeof(*desc))) == NULL)
 	desc = (PCAN_DESCRIPTOR *) kmalloc(sizeof(*desc), GFP_KERNEL);
 	if (!desc)
 		goto fail;
@@ -124,14 +123,84 @@ DWORD CAN_Init(HANDLE hHandle, WORD wBTR0BTR1, int nCANMsgType)
 	return err;
 }
 
+//----------------------------------------------------------------------------
+// write to CAN
+DWORD CAN_Write(HANDLE hHandle, TPCANMsg* pMsgBuff)
+{
+	PCAN_DESCRIPTOR *desc = (PCAN_DESCRIPTOR *)hHandle;
+	int err = EBADF;
+
+	if (desc)
+	{
+		if ((err = rt_dev_ioctl(desc->nFileNo, PCAN_WRITE_MSG, pMsgBuff)) < 0)
+			return err;
+	}
+
+	return err;
+}
+
+//----------------------------------------------------------------------------
+// write to CAN
+/* DWORD LINUX_CAN_Write_Timeout(HANDLE hHandle, TPCANMsg* pMsgBuff, int nMicroSeconds)
+ * {
+ * 	int err = EBADF;
+ * 	PCAN_DESCRIPTOR *desc;
+ * 
+ * 	if (nMicroSeconds < 0)
+ * 		return CAN_Write(hHandle, pMsgBuff);
+ * 
+ * 	desc = (PCAN_DESCRIPTOR *)hHandle;
+ * 	if (desc)
+ * 	{
+ *     fd_set fdWrite;
+ * 		struct timeval t;
+ * 		
+ * 		// calculate timeout values
+ * 		t.tv_sec  = nMicroSeconds / 1000000L;
+ * 		t.tv_usec = nMicroSeconds % 1000000L;
+ * 		
+ *   	FD_ZERO(&fdWrite);
+ *   	FD_SET(desc->nFileNo, &fdWrite);
+ * 		
+ * 		// wait until timeout or a message is ready to get written
+ * 	  err = select(desc->nFileNo + 1,  NULL, &fdWrite,NULL, &t);	
+ * 		
+ * 		// the only one file descriptor is ready for write
+ * 		if (err  > 0)
+ * 			return CAN_Write(hHandle, pMsgBuff);  
+ * 		
+ * 		// nothing is ready, timeout occured
+ * 		if (err == 0)  
+ * 			return CAN_ERR_QXMTFULL;
+ * 	}
+ * 	
+ * 	// any else error	 
+ * 	return err;
+ * }
+ */
+
 HANDLE fd0;
 
 static int __init rtcan_init(void)
 {
 	int err;
+	int i;
+	DWORD ret;
+	TPCANMsg* msg;
+
+	msg = (TPCANMsg *) kmalloc(sizeof(*msg), GFP_KERNEL);
+
+	msg->ID = 0b10000000010;
+	msg->MSGTYPE = MSGTYPE_STANDARD;
+	msg->LEN = 8;
+
+	for (i=0; i<=8; i++)
+	{
+		msg->DATA[i]= 0b00000000;
+	}
 
 	fd0 = LINUX_CAN_Open(szDeviceName(0), O_RDWR);
-	err = CAN_Init(fd0,CAN_BAUD_1M,CAN_INIT_TYPE_ST);
+	err = CAN_Init(fd0,CAN_BAUD_500K,CAN_INIT_TYPE_ST);
 
 	if(fd0)
 	{
@@ -142,6 +211,10 @@ static int __init rtcan_init(void)
 	else
 		printk(KERN_INFO "[rtcan] error\n");
 
+	ret = CAN_Write(fd0, msg);
+	printk(KERN_INFO "[rtcan] write status: %i\n",ret);
+
+	kfree(msg);
 	return 0;
 }
 

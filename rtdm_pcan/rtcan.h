@@ -87,3 +87,20 @@ DWORD CAN_Init(HANDLE hHandle, WORD wBTR0BTR1, int nCANMsgType);
 //  The last close on the hardware put the chip into passive state.
 DWORD CAN_Close(HANDLE hHandle);
 
+//****************************************************************************
+//  CAN_Write()
+//  writes a message to the CAN bus. If the write queue is full the current
+//  write blocks until either a message is sent or a error occured.
+//
+DWORD CAN_Write(HANDLE hHandle, TPCANMsg* pMsgBuff);
+
+//****************************************************************************
+//  LINUX_CAN_Write_Timeout()
+//  writes a message to the CAN bus. If the (software) message buffer is full
+//  the current write request blocks until a write slot gets empty 
+//  or a timeout or a error occures.
+//  nMicroSeconds  > 0 -> Timeout in microseconds
+//  nMicroSeconds == 0 -> polling
+//  nMicroSeconds  < 0 -> blocking, same as CAN_Write()
+DWORD LINUX_CAN_Write_Timeout(HANDLE hHandle, TPCANMsg* pMsgBuff, int nMicroSeconds);
+
