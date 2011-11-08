@@ -181,6 +181,12 @@ DWORD CAN_Write(HANDLE hHandle, TPCANMsg* pMsgBuff)
 
 HANDLE fd0;
 
+static void __exit rtcan_exit(void)
+{
+	CAN_Close(fd0);
+	printk(KERN_INFO "[rtcan] succesfully unloaded\n");
+}
+
 static int __init rtcan_init(void)
 {
 	int err;
@@ -216,12 +222,6 @@ static int __init rtcan_init(void)
 
 	kfree(msg);
 	return 0;
-}
-
-static void __exit rtcan_exit(void)
-{
-	CAN_Close(fd0);
-	printk(KERN_INFO "[rtcan] succesfully unloaded\n");
 }
 
 module_init(rtcan_init);
