@@ -27,7 +27,7 @@
 #define ADLINK_PCI_DEVICE_ID 0x7841
 
 #define ADLINK_PCI_CONFIG_PORT_SIZE    0x007f
-#define ADLINK_PCI_PORT_SIZE           0x0080
+#define ADLINK_PCI_PORT_SIZE           0x00ff
 
 #define PEAK_PCI_VENDOR_ID 0x001C
 #define PEAK_PCI_DEVICE_ID 0x0001
@@ -42,34 +42,42 @@ static int __init check_init(void)
     struct pci_dev *peakDev;
     adlinkDev = pci_get_device (ADLINK_PCI_VENDOR_ID, ADLINK_PCI_DEVICE_ID, NULL);
     peakDev = pci_get_device (PEAK_PCI_VENDOR_ID, PEAK_PCI_DEVICE_ID, NULL);
+//    printk (KERN_INFO "adlinkDev->resource[1] length: %p\n", -(adlinkDev->resource[1].start)+adlinkDev->resource[1].end );
+//    printk (KERN_INFO "adlinkDev->resource[2] length: %p\n", -(adlinkDev->resource[2].start)+adlinkDev->resource[2].end );
+//    printk (KERN_INFO "adlinkDev->resource[3] length: %p\n", -(adlinkDev->resource[2].start)+adlinkDev->resource[2].end );
+//
+//    printk (KERN_INFO "peakDev->resource[0] length: %p\n", -(peakDev->resource[0].start)+peakDev->resource[0].end );
+//    printk (KERN_INFO "peakDev->resource[1] length: %p\n", -(peakDev->resource[1].start)+peakDev->resource[1].end );
+
     printk (KERN_INFO "adlinkDev->resource[0].start: %p\n", adlinkDev->resource[0].start);
     printk (KERN_INFO "adlinkDev->resource[1].start: %p\n", adlinkDev->resource[1].start);
     printk (KERN_INFO "adlinkDev->resource[2].start: %p\n", adlinkDev->resource[2].start);
     printk (KERN_INFO "adlinkDev->resource[3].start: %p\n", adlinkDev->resource[3].start);
-    printk (KERN_INFO "peakDev->resource[0].start: %p\n", peakDev->resource[0].start);
-    printk (KERN_INFO "peakDev->resource[1].start: %p\n", peakDev->resource[1].start);
-    printk (KERN_INFO "peakDev->resource[2].start: %p\n", peakDev->resource[2].start);
-    printk (KERN_INFO "peakDev->resource[3].start: %p\n", peakDev->resource[3].start);
+//    printk (KERN_INFO "peakDev->resource[0].start: %p\n", peakDev->resource[0].start);
+//    printk (KERN_INFO "peakDev->resource[1].start: %p\n", peakDev->resource[1].start);
+//    printk (KERN_INFO "peakDev->resource[2].start: %p\n", peakDev->resource[2].start);
+//    printk (KERN_INFO "peakDev->resource[3].start: %p\n", peakDev->resource[3].start);
 
-    i = check_mem_region(adlinkDev->resource[1].start, ADLINK_PCI_CONFIG_PORT_SIZE);
-    printk(KERN_INFO "check_mem_region adlink resource[1] return value: %i\n",i);
+//    i = check_mem_region(adlinkDev->resource[1].start, ADLINK_PCI_CONFIG_PORT_SIZE);
+//    printk(KERN_INFO "check_mem_region adlink resource[1] return value: %i\n",i);
     i = check_region(adlinkDev->resource[1].start, ADLINK_PCI_CONFIG_PORT_SIZE);
     printk(KERN_INFO "check_region adlink resource[1] return value: %i\n",i);
-
-    j = check_mem_region(adlinkDev->resource[2].start, ADLINK_PCI_CONFIG_PORT_SIZE);
-    printk(KERN_INFO "check_mem_region adlink resource[2] return value: %i\n",j);
+//
+//    j = check_mem_region(adlinkDev->resource[2].start, ADLINK_PCI_CONFIG_PORT_SIZE);
+//    printk(KERN_INFO "check_mem_region adlink resource[2] return value: %i\n",j);
     j = check_region(adlinkDev->resource[2].start, ADLINK_PCI_PORT_SIZE);
     printk(KERN_INFO "check_region adlink resource[2] return value: %i\n",j);
+//
+//    k = check_mem_region(peakDev->resource[0].start, PEAK_PCI_CONFIG_PORT_SIZE);
+//    printk(KERN_INFO "check_mem_region adlink resource[0] return value: %i\n",k);
+//    k = check_region(peakDev->resource[0].start, PEAK_PCI_CONFIG_PORT_SIZE);
+//    printk(KERN_INFO "check_region adlink resource[2] return value: %i\n",k);
+//
+//    l = check_mem_region(peakDev->resource[1].start, PEAK_PCI_CONFIG_PORT_SIZE);
+//    printk(KERN_INFO "check_mem_region adlink resource[0] return value: %i\n",l);
+//    l = check_region(peakDev->resource[1].start, PEAK_PCI_PORT_SIZE);
+//    printk(KERN_INFO "check_region adlink resource[2] return value: %i\n",l);
 
-    k = check_mem_region(peakDev->resource[0].start, PEAK_PCI_CONFIG_PORT_SIZE);
-    printk(KERN_INFO "check_mem_region adlink resource[0] return value: %i\n",k);
-    k = check_region(peakDev->resource[0].start, PEAK_PCI_CONFIG_PORT_SIZE);
-    printk(KERN_INFO "check_region adlink resource[2] return value: %i\n",k);
-
-    l = check_mem_region(peakDev->resource[1].start, PEAK_PCI_CONFIG_PORT_SIZE);
-    printk(KERN_INFO "check_mem_region adlink resource[0] return value: %i\n",l);
-    l = check_region(peakDev->resource[1].start, PEAK_PCI_PORT_SIZE);
-    printk(KERN_INFO "check_region adlink resource[2] return value: %i\n",l);
 
     return 0;
 }
